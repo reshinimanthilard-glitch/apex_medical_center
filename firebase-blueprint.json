@@ -1,0 +1,443 @@
+{
+  "entities": {
+    "Patient": {
+      "title": "Patient",
+      "description": "Patient demographic and medical registration profile",
+      "type": "object",
+      "properties": {
+        "patientId": {
+          "type": "string",
+          "description": "Unique clinic identifier, e.g. APX-2026-1"
+        },
+        "nic": {
+          "type": "string",
+          "description": "National Identity Card (NIC) number"
+        },
+        "name": {
+          "type": "string",
+          "description": "Full legal name of the patient"
+        },
+        "dateOfBirth": {
+          "type": "string",
+          "description": "Date of birth in YYYY-MM-DD format"
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "Contact telephone number"
+        },
+        "address": {
+          "type": "string",
+          "description": "Residential home address"
+        },
+        "gender": {
+          "type": "string",
+          "description": "Gender identity or biological sex"
+        },
+        "bloodType": {
+          "type": "string",
+          "description": "Blood group type (e.g. O+, A+, B-, AB+)"
+        },
+        "allergies": {
+          "type": "string",
+          "description": "Known medical or drug allergies"
+        },
+        "emergencyContact": {
+          "type": "string",
+          "description": "Emergency contact name and phone"
+        },
+        "registeredBy": {
+          "type": "string",
+          "description": "Auth UID of medical staff member"
+        },
+        "registeredByName": {
+          "type": "string",
+          "description": "Display name of the medical staff member"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp string of registration"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp string of last update"
+        }
+      },
+      "required": [
+        "patientId",
+        "name",
+        "dateOfBirth",
+        "phoneNumber",
+        "address",
+        "registeredBy",
+        "createdAt"
+      ]
+    },
+    "Prescription": {
+      "title": "Prescription",
+      "description": "Individual patient visit prescription event with distinct prescription number, internal/external type, timestamp, and itemized medicines",
+      "type": "object",
+      "properties": {
+        "prescriptionNumber": {
+          "type": "string",
+          "description": "Unique prescription identifier, e.g. RX-INT-2026-0012 or RX-EXT-2026-0012"
+        },
+        "prescriptionType": {
+          "type": "string",
+          "description": "Internal (Our Drug Store) or External (Outside Pharmacy)"
+        },
+        "patientDocId": {
+          "type": "string",
+          "description": "Parent patient document identifier"
+        },
+        "patientId": {
+          "type": "string",
+          "description": "Clinic patient identifier code"
+        },
+        "date": {
+          "type": "string",
+          "description": "Date of prescription visit YYYY-MM-DD"
+        },
+        "time": {
+          "type": "string",
+          "description": "Time of prescription visit, e.g. 10:30 AM"
+        },
+        "prescribedAt": {
+          "type": "string",
+          "description": "ISO timestamp of prescription issue"
+        },
+        "prescribingDoctor": {
+          "type": "string",
+          "description": "Doctor name: Dr. Wishmika Rajaguru"
+        },
+        "visitReason": {
+          "type": "string",
+          "description": "Clinical diagnosis or reason for visit"
+        },
+        "instructions": {
+          "type": "string",
+          "description": "General clinical advice and directions"
+        },
+        "status": {
+          "type": "string",
+          "description": "Prescription status: active, completed, discontinued"
+        },
+        "isDispensed": {
+          "type": "boolean",
+          "description": "Whether internal prescription medicines were dispensed from drug store"
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "UID of prescribing staff member"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp string"
+        }
+      },
+      "required": [
+        "prescriptionNumber",
+        "patientDocId",
+        "patientId",
+        "date",
+        "prescribingDoctor",
+        "createdBy",
+        "createdAt"
+      ]
+    },
+    "MedicalReport": {
+      "title": "MedicalReport",
+      "description": "Diagnostic medical reports, laboratory test results, PDF documents, and scan photos",
+      "type": "object",
+      "properties": {
+        "patientDocId": {
+          "type": "string",
+          "description": "Parent patient document identifier"
+        },
+        "patientId": {
+          "type": "string",
+          "description": "Clinic patient identifier code"
+        },
+        "title": {
+          "type": "string",
+          "description": "Document title, e.g. Full Blood Count"
+        },
+        "reportDate": {
+          "type": "string",
+          "description": "Date of medical test or scan YYYY-MM-DD"
+        },
+        "category": {
+          "type": "string",
+          "description": "Report category: Lab Report, Radiology, etc."
+        },
+        "fileType": {
+          "type": "string",
+          "description": "File format: image or pdf"
+        },
+        "fileName": {
+          "type": "string",
+          "description": "Original uploaded file name"
+        },
+        "fileData": {
+          "type": "string",
+          "description": "Base64 data URL of photo or PDF"
+        },
+        "fileSize": {
+          "type": "number",
+          "description": "File size in bytes"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Clinical findings or radiologist notes"
+        },
+        "uploadedBy": {
+          "type": "string",
+          "description": "UID of uploading staff member"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Upload timestamp string"
+        }
+      },
+      "required": [
+        "patientDocId",
+        "patientId",
+        "title",
+        "reportDate",
+        "fileType",
+        "fileName",
+        "fileData",
+        "uploadedBy",
+        "createdAt"
+      ]
+    },
+    "StoreMedicine": {
+      "title": "StoreMedicine",
+      "description": "Drug Store Medicine inventory item with stock quantity, batch, and expiry tracking",
+      "type": "object",
+      "properties": {
+        "medicineName": {
+          "type": "string",
+          "description": "Brand or primary medicine name"
+        },
+        "genericName": {
+          "type": "string",
+          "description": "Generic compound name"
+        },
+        "strength": {
+          "type": "string",
+          "description": "Strength, e.g. 500 mg"
+        },
+        "dosageForm": {
+          "type": "string",
+          "description": "Tablet, Capsule, Syrup, Injection, Cream, etc."
+        },
+        "unitOfMeasurement": {
+          "type": "string",
+          "description": "tablets, capsules, bottles, vials, tubes, etc."
+        },
+        "currentStockQuantity": {
+          "type": "number",
+          "description": "Available stock quantity"
+        },
+        "minimumStockLevel": {
+          "type": "number",
+          "description": "Threshold for low-stock warning"
+        },
+        "batchNumber": {
+          "type": "string",
+          "description": "Primary/current active batch number"
+        },
+        "expiryDate": {
+          "type": "string",
+          "description": "Expiry date YYYY-MM-DD"
+        },
+        "supplierName": {
+          "type": "string",
+          "description": "Pharmaceutical supplier name"
+        },
+        "dateAdded": {
+          "type": "string",
+          "description": "Date added YYYY-MM-DD"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last update timestamp"
+        }
+      },
+      "required": [
+        "medicineName",
+        "currentStockQuantity",
+        "minimumStockLevel",
+        "createdAt"
+      ]
+    },
+    "StockTransaction": {
+      "title": "StockTransaction",
+      "description": "Immutable stock movement audit trail",
+      "type": "object",
+      "properties": {
+        "medicineId": {
+          "type": "string",
+          "description": "Target store medicine ID"
+        },
+        "medicineName": {
+          "type": "string",
+          "description": "Name of medicine"
+        },
+        "transactionType": {
+          "type": "string",
+          "description": "Stock Received, Dispensed, Returned, Adjustment"
+        },
+        "quantity": {
+          "type": "number",
+          "description": "Quantity moved"
+        },
+        "previousStock": {
+          "type": "number",
+          "description": "Stock balance prior to transaction"
+        },
+        "updatedStock": {
+          "type": "number",
+          "description": "Stock balance following transaction"
+        },
+        "prescriptionNumber": {
+          "type": "string",
+          "description": "Related prescription number if dispensed"
+        },
+        "patientId": {
+          "type": "string",
+          "description": "Related patient ID if dispensed"
+        },
+        "patientName": {
+          "type": "string",
+          "description": "Related patient name if dispensed"
+        },
+        "batchNumber": {
+          "type": "string",
+          "description": "Stock batch identifier"
+        },
+        "performedBy": {
+          "type": "string",
+          "description": "User who performed transaction"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Transaction notes"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "ISO timestamp"
+        }
+      },
+      "required": [
+        "medicineId",
+        "medicineName",
+        "transactionType",
+        "quantity",
+        "previousStock",
+        "updatedStock",
+        "timestamp"
+      ]
+    },
+    "MedicineRecord": {
+      "title": "MedicineRecord",
+      "description": "Clinical prescription and medicine entry",
+      "type": "object",
+      "properties": {
+        "patientDocId": {
+          "type": "string",
+          "description": "Parent patient document identifier"
+        },
+        "patientId": {
+          "type": "string",
+          "description": "Clinic patient identifier code"
+        },
+        "date": {
+          "type": "string",
+          "description": "Prescription date YYYY-MM-DD"
+        },
+        "medicineName": {
+          "type": "string",
+          "description": "Brand and generic medicine name"
+        },
+        "dosage": {
+          "type": "string",
+          "description": "Dosage instructions and amount"
+        },
+        "prescribingDoctor": {
+          "type": "string",
+          "description": "Name and credentials of prescribing physician"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Clinical administration notes or warnings"
+        },
+        "status": {
+          "type": "string",
+          "description": "Prescription status: active, completed, or discontinued"
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "UID of the staff entering the record"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp string"
+        }
+      },
+      "required": [
+        "patientDocId",
+        "patientId",
+        "date",
+        "medicineName",
+        "dosage",
+        "prescribingDoctor",
+        "notes",
+        "createdBy",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/patients/{patientId}": {
+      "schema": {
+        "$ref": "#/entities/Patient"
+      },
+      "description": "Medical center patient registrations"
+    },
+    "/patients/{patientId}/prescriptions/{prescriptionId}": {
+      "schema": {
+        "$ref": "#/entities/Prescription"
+      },
+      "description": "Individual patient visit prescriptions"
+    },
+    "/patients/{patientId}/medical_reports/{reportId}": {
+      "schema": {
+        "$ref": "#/entities/MedicalReport"
+      },
+      "description": "Medical reports, diagnostic lab tests, PDF files, and scan photos"
+    },
+    "/store_medicines/{medicineId}": {
+      "schema": {
+        "$ref": "#/entities/StoreMedicine"
+      },
+      "description": "Drug store medicine inventory items and stock batches"
+    },
+    "/stock_transactions/{transactionId}": {
+      "schema": {
+        "$ref": "#/entities/StockTransaction"
+      },
+      "description": "Drug store stock transaction audit logs"
+    },
+    "/patients/{patientId}/medicine_records/{recordId}": {
+      "schema": {
+        "$ref": "#/entities/MedicineRecord"
+      },
+      "description": "Historical medicine logs for each patient"
+    }
+  }
+}

@@ -1,0 +1,131 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global Safety Net: deny by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isAuthorizedStaff(staffId) {
+      return (request.auth != null && (request.auth.uid == staffId || staffId is string)) 
+        || (request.auth == null && staffId is string && staffId.size() > 0 && staffId.size() <= 100);
+    }
+
+    function isValidPatient(data) {
+      return data.keys().hasAll(['patientId', 'name', 'dateOfBirth', 'phoneNumber', 'address', 'registeredBy', 'createdAt'])
+        && data.keys().hasOnly(['patientId', 'nic', 'name', 'dateOfBirth', 'phoneNumber', 'address', 'gender', 'bloodType', 'allergies', 'emergencyContact', 'registeredBy', 'registeredByName', 'createdAt', 'updatedAt'])
+        && data.patientId is string && data.patientId.size() >= 2 && data.patientId.size() <= 50
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 120
+        && data.dateOfBirth is string && data.dateOfBirth.size() >= 8 && data.dateOfBirth.size() <= 20
+        && data.phoneNumber is string && data.phoneNumber.size() >= 5 && data.phoneNumber.size() <= 30
+        && data.address is string && data.address.size() >= 3 && data.address.size() <= 250
+        && data.registeredBy is string && isAuthorizedStaff(data.registeredBy)
+        && data.createdAt is string && data.createdAt.size() <= 50
+        && (!('nic' in data) || (data.nic is string && data.nic.size() <= 30))
+        && (!('gender' in data) || (data.gender is string && data.gender.size() <= 30))
+        && (!('bloodType' in data) || (data.bloodType is string && data.bloodType.size() <= 10))
+        && (!('allergies' in data) || (data.allergies is string && data.allergies.size() <= 200))
+        && (!('emergencyContact' in data) || (data.emergencyContact is string && data.emergencyContact.size() <= 100))
+        && (!('registeredByName' in data) || (data.registeredByName is string && data.registeredByName.size() <= 100))
+        && (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 50));
+    }
+
+    function isValidPrescription(data, parentPatientDocId) {
+      return data.keys().hasAll(['prescriptionNumber', 'patientDocId', 'patientId', 'date', 'prescribingDoctor', 'createdBy', 'createdAt'])
+        && data.keys().hasOnly(['prescriptionNumber', 'prescriptionType', 'patientDocId', 'patientId', 'date', 'time', 'prescribedAt', 'prescribingDoctor', 'visitReason', 'medicines', 'instructions', 'status', 'isDispensed', 'createdBy', 'createdAt', 'updatedAt'])
+        && data.patientDocId is string && data.patientDocId == parentPatientDocId
+        && data.prescriptionNumber is string && data.prescriptionNumber.size() >= 2 && data.prescriptionNumber.size() <= 60
+        && data.patientId is string && data.patientId.size() >= 2 && data.patientId.size() <= 50
+        && data.date is string && data.date.size() >= 8 && data.date.size() <= 30
+        && data.prescribingDoctor is string && data.prescribingDoctor.size() >= 2 && data.prescribingDoctor.size() <= 120
+        && isAuthorizedStaff(data.createdBy)
+        && data.createdAt is string && data.createdAt.size() <= 50;
+    }
+
+    function isValidMedicalReport(data, parentPatientDocId) {
+      return data.keys().hasAll(['patientDocId', 'patientId', 'title', 'reportDate', 'fileType', 'fileName', 'fileData', 'uploadedBy', 'createdAt'])
+        && data.keys().hasOnly(['patientDocId', 'patientId', 'title', 'reportDate', 'category', 'fileType', 'fileName', 'fileData', 'fileSize', 'notes', 'uploadedBy', 'createdAt'])
+        && data.patientDocId is string && data.patientDocId == parentPatientDocId
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 150
+        && data.reportDate is string && data.reportDate.size() >= 8 && data.reportDate.size() <= 30
+        && data.fileType is string && data.fileType in ['image', 'pdf']
+        && data.fileData is string && data.fileData.size() > 0 && data.fileData.size() <= 900000
+        && isAuthorizedStaff(data.uploadedBy)
+        && data.createdAt is string && data.createdAt.size() <= 50;
+    }
+
+    function isValidMedicineRecord(data, parentPatientDocId) {
+      return data.keys().hasAll(['patientDocId', 'patientId', 'date', 'medicineName', 'dosage', 'prescribingDoctor', 'notes', 'createdBy', 'createdAt'])
+        && data.keys().hasOnly(['patientDocId', 'patientId', 'date', 'medicineName', 'dosage', 'mealTiming', 'frequency', 'duration', 'prescribingDoctor', 'notes', 'status', 'prescriptionNumber', 'createdBy', 'createdAt', 'updatedAt'])
+        && data.patientDocId is string && data.patientDocId == parentPatientDocId
+        && data.patientId is string && data.patientId.size() >= 2 && data.patientId.size() <= 50
+        && data.date is string && data.date.size() >= 8 && data.date.size() <= 30
+        && data.medicineName is string && data.medicineName.size() >= 2 && data.medicineName.size() <= 120
+        && data.dosage is string && data.dosage.size() >= 1 && data.dosage.size() <= 120
+        && data.prescribingDoctor is string && data.prescribingDoctor.size() >= 2 && data.prescribingDoctor.size() <= 120
+        && data.notes is string && data.notes.size() <= 500
+        && isAuthorizedStaff(data.createdBy)
+        && data.createdAt is string && data.createdAt.size() <= 50
+        && (!('mealTiming' in data) || (data.mealTiming is string && data.mealTiming.size() <= 50))
+        && (!('frequency' in data) || (data.frequency is string && data.frequency.size() <= 50))
+        && (!('duration' in data) || (data.duration is string && data.duration.size() <= 50))
+        && (!('status' in data) || (data.status is string && data.status.size() <= 30))
+        && (!('prescriptionNumber' in data) || (data.prescriptionNumber is string && data.prescriptionNumber.size() <= 60))
+        && (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 50));
+    }
+
+    // Patient records
+    match /patients/{patientDocId} {
+      allow get, list: if true;
+      allow create: if isValidId(patientDocId) && isValidPatient(request.resource.data);
+      allow update: if isValidId(patientDocId) && isValidPatient(request.resource.data)
+                      && request.resource.data.patientId == resource.data.patientId 
+                      && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if request.auth != null;
+
+      // Separate visit prescriptions subcollection
+      match /prescriptions/{prescriptionId} {
+        allow get, list: if true;
+        allow create, update: if isValidId(prescriptionId) && isValidPrescription(request.resource.data, patientDocId);
+        allow delete: if request.auth != null;
+      }
+
+      // Medical reports & documents (photos/PDFs) subcollection
+      match /medical_reports/{reportId} {
+        allow get, list: if true;
+        allow create: if isValidId(reportId) && isValidMedicalReport(request.resource.data, patientDocId);
+        allow update: if isValidId(reportId) && isValidMedicalReport(request.resource.data, patientDocId);
+        allow delete: if request.auth != null;
+      }
+
+      // Legacy/flat medicine records subcollection
+      match /medicine_records/{recordId} {
+        allow get, list: if true;
+        allow create: if isValidId(recordId) && isValidMedicineRecord(request.resource.data, patientDocId);
+        allow update: if isValidId(recordId) && isValidMedicineRecord(request.resource.data, patientDocId)
+                        && request.resource.data.createdAt == resource.data.createdAt;
+        allow delete: if request.auth != null;
+      }
+    }
+
+    // Drug Store Medicines Inventory
+    match /store_medicines/{medicineId} {
+      allow get, list: if true;
+      allow create, update: if isValidId(medicineId);
+      allow delete: if request.auth != null;
+    }
+
+    // Stock Movement Audit Log
+    match /stock_transactions/{transactionId} {
+      allow get, list: if true;
+      allow create: if isValidId(transactionId);
+      allow update, delete: if false; // Immutable audit trail
+    }
+  }
+}
