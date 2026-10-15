@@ -23,11 +23,15 @@ import {
   ArrowRight,
   TrendingUp,
   TrendingDown,
-  ArrowUpRight
+  ArrowUpRight,
+  Edit3,
+  Trash2
 } from 'lucide-react';
 import { Patient, Prescription } from '../types/patient';
 import { getLocalPrescriptions } from '../services/patientService';
 import { EcgHeartbeatBackground } from './EcgHeartbeatBackground';
+import { EditPatientModal } from './EditPatientModal';
+import { DeleteConfirmationModal } from './DeleteConfirmationModal';
 
 interface PatientSearchProps {
   patients: Patient[];
@@ -39,6 +43,8 @@ interface PatientSearchProps {
   onQuickPrintPrescription?: (patient: Patient) => void;
   storeMedicinesCount?: number;
   onNavigateToDrugStore?: () => void;
+  onUpdatePatient?: (patientDocId: string, updatedData: Partial<Patient>) => Promise<void>;
+  onDeletePatient?: (patientDocId: string) => Promise<void>;
 }
 
 export const PatientSearch: React.FC<PatientSearchProps> = ({
@@ -51,9 +57,13 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({
   onQuickPrintPrescription,
   storeMedicinesCount = 0,
   onNavigateToDrugStore,
+  onUpdatePatient,
+  onDeletePatient,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'allergies' | 'female' | 'male'>('all');
+  const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
+  const [deletingPatient, setDeletingPatient] = useState<Patient | null>(null);
 
   // Filter patients based on query (by NIC, Name, and Medical ID) and demographic filters
   const filteredPatients = useMemo(() => {
@@ -598,11 +608,72 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({
                     <Printer className="w-3.5 h-3.5 text-teal-600" />
                     <span>Print Rx</span>
                   </button>
+
+                  {/* Edit Personal Profile Button */}
+                  {onUpdatePatient && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingPatient(patient);
+                      }}
+                      className="p-2 bg-slate-50 hover:bg-teal-50 text-slate-500 hover:text-teal-700 border border-slate-200 rounded-xl transition-colors cursor-pointer"
+                      title="Edit Personal Profile"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+
+                  {/* Delete Personal Profile Button */}
+                  {onDeletePatient && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeletingPatient(patient);
+                      }}
+                      className="p-2 bg-slate-50 hover:bg-rose-50 text-slate-500 hover:text-rose-600 border border-slate-200 rounded-xl transition-colors cursor-pointer"
+                      title="Delete Personal Profile"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
+      )}
+
+      {/* Edit Patient Personal Profile Modal */}
+      {editingPatient && (
+        <EditPatientModal
+          isOpen={!!editingPatient}
+          onClose={() => setEditingPatient(null)}
+          patient={editingPatient}
+          onSave={async (updatedData) => {
+            if (onUpdatePatient) {
+              const docId = editingPatient.id || `pat_${editingPatient.patientId.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+              await onUpdatePatient(docId, updatedData);
+            }
+          }}
+        />
+      )}
+
+      {/* Delete Patient Personal Profile Modal */}
+      {deletingPatient && (
+        <DeleteConfirmationModal
+          isOpen={!!deletingPatient}
+          onClose={() => setDeletingPatient(null)}
+          title="Delete Personal Profile"
+          description="Are you sure you want to permanently delete this patient record? This will permanently remove their personal profile, all recorded visits, and prescriptions."
+          itemName={`${deletingPatient.name} (ID: ${deletingPatient.patientId})`}
+          confirmLabel="Yes, Delete Record"
+          onConfirm={async () => {
+            if (onDeletePatient) {
+              const docId = deletingPatient.id || `pat_${deletingPatient.patientId.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+              await onDeletePatient(docId);
+            }
+          }}
+        />
       )}
     </div>
   );

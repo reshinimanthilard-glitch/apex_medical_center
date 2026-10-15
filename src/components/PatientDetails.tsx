@@ -31,6 +31,8 @@ import { PrintPrescriptionModal } from './PrintPrescriptionModal';
 import { DispensePrescriptionModal } from './DispensePrescriptionModal';
 import { MedicalReportsSection } from './MedicalReportsSection';
 import { EcgHeartbeatBackground } from './EcgHeartbeatBackground';
+import { EditPatientModal } from './EditPatientModal';
+import { DeleteConfirmationModal } from './DeleteConfirmationModal';
 
 interface PatientDetailsProps {
   patient: Patient;
@@ -56,6 +58,8 @@ interface PatientDetailsProps {
   isLoading: boolean;
   storeMedicines?: StoreMedicine[];
   onRefreshStore?: () => Promise<void>;
+  onUpdatePatientProfile?: (patientDocId: string, updatedData: Partial<Patient>) => Promise<void>;
+  onDeletePatient?: (patientDocId: string) => Promise<void>;
 }
 
 export const PatientDetails: React.FC<PatientDetailsProps> = ({
@@ -72,10 +76,14 @@ export const PatientDetails: React.FC<PatientDetailsProps> = ({
   isLoading,
   storeMedicines = [],
   onRefreshStore,
+  onUpdatePatientProfile,
+  onDeletePatient,
 }) => {
   const [activeTab, setActiveTab] = useState<'prescriptions' | 'reports' | 'allMeds'>('prescriptions');
   
   // Modals state
+  const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
+  const [isDeleteProfileModalOpen, setIsDeleteProfileModalOpen] = useState(false);
   const [isCreateRxModalOpen, setIsCreateRxModalOpen] = useState(false);
   const [editingRx, setEditingRx] = useState<Prescription | null>(null);
   const [selectedRxForPrint, setSelectedRxForPrint] = useState<Prescription | null>(null);
@@ -136,7 +144,31 @@ export const PatientDetails: React.FC<PatientDetailsProps> = ({
           <span>Back to Patient Directory</span>
         </button>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Edit Patient Personal Profile */}
+          {onUpdatePatientProfile && (
+            <button
+              onClick={() => setIsEditProfileModalOpen(true)}
+              className="flex items-center gap-1.5 bg-teal-50 hover:bg-teal-100 text-teal-850 border border-teal-200 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-2xs transition-colors cursor-pointer"
+              title="Edit patient personal profile details"
+            >
+              <Edit3 className="w-4 h-4 text-teal-600" />
+              <span>Edit Profile</span>
+            </button>
+          )}
+
+          {/* Delete Patient Personal Profile */}
+          {onDeletePatient && (
+            <button
+              onClick={() => setIsDeleteProfileModalOpen(true)}
+              className="flex items-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-3 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-2xs transition-colors cursor-pointer"
+              title="Permanently delete patient personal profile"
+            >
+              <Trash2 className="w-4 h-4 text-rose-600" />
+              <span>Delete</span>
+            </button>
+          )}
+
           {/* Quick Print Button */}
           {prescriptions.length > 0 && (
             <button
@@ -177,6 +209,15 @@ export const PatientDetails: React.FC<PatientDetailsProps> = ({
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <h2 className="text-2xl font-bold tracking-tight">{patient.name}</h2>
+                  {onUpdatePatientProfile && (
+                    <button
+                      onClick={() => setIsEditProfileModalOpen(true)}
+                      className="p-1 rounded-lg bg-white/15 hover:bg-white/25 text-white transition-colors cursor-pointer"
+                      title="Edit Personal Profile"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                   <span className="font-mono text-xs font-black bg-white/20 text-white px-3 py-1 rounded-full border border-white/30 backdrop-blur-xs">
                     {patient.patientId}
                   </span>
@@ -609,6 +650,39 @@ export const PatientDetails: React.FC<PatientDetailsProps> = ({
             }
             if (onRefreshStore) {
               await onRefreshStore();
+            }
+          }}
+        />
+      )}
+
+      {/* Edit Patient Personal Profile Modal */}
+      {isEditProfileModalOpen && (
+        <EditPatientModal
+          isOpen={isEditProfileModalOpen}
+          onClose={() => setIsEditProfileModalOpen(false)}
+          patient={patient}
+          onSave={async (updatedData) => {
+            if (onUpdatePatientProfile) {
+              const docId = patient.id || `pat_${patient.patientId.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+              await onUpdatePatientProfile(docId, updatedData);
+            }
+          }}
+        />
+      )}
+
+      {/* Delete Patient Personal Profile Modal */}
+      {isDeleteProfileModalOpen && (
+        <DeleteConfirmationModal
+          isOpen={isDeleteProfileModalOpen}
+          onClose={() => setIsDeleteProfileModalOpen(false)}
+          title="Delete Personal Profile"
+          description="Are you sure you want to permanently delete this patient personal profile? This will remove all personal details, consultation records, and prescription files."
+          itemName={`${patient.name} (ID: ${patient.patientId})`}
+          confirmLabel="Yes, Delete Record"
+          onConfirm={async () => {
+            if (onDeletePatient) {
+              const docId = patient.id || `pat_${patient.patientId.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+              await onDeletePatient(docId);
             }
           }}
         />

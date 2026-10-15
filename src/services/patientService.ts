@@ -249,6 +249,96 @@ export async function fetchAllPatients(): Promise<Patient[]> {
   }
 }
 
+/**
+ * Update an existing patient personal profile
+ */
+export async function updatePatient(
+  patientDocId: string,
+  updatedData: Partial<Patient>
+): Promise<Patient> {
+  const now = new Date().toISOString();
+  const cleanPayload: Record<string, any> = {
+    updatedAt: now,
+  };
+
+  if (updatedData.name !== undefined) cleanPayload.name = updatedData.name.trim();
+  if (updatedData.nic !== undefined) cleanPayload.nic = updatedData.nic.trim().toUpperCase();
+  if (updatedData.dateOfBirth !== undefined) cleanPayload.dateOfBirth = updatedData.dateOfBirth.trim();
+  if (updatedData.phoneNumber !== undefined) cleanPayload.phoneNumber = updatedData.phoneNumber.trim();
+  if (updatedData.address !== undefined) cleanPayload.address = updatedData.address.trim();
+  if (updatedData.gender !== undefined) cleanPayload.gender = updatedData.gender;
+  if (updatedData.bloodType !== undefined) cleanPayload.bloodType = updatedData.bloodType;
+  if (updatedData.allergies !== undefined) cleanPayload.allergies = updatedData.allergies.trim();
+  if (updatedData.emergencyContact !== undefined) cleanPayload.emergencyContact = updatedData.emergencyContact.trim();
+
+  const safeData = deepCleanFirestore(cleanPayload);
+
+  // Update in Firestore
+  try {
+    const docRef = doc(db, 'patients', patientDocId);
+    await updateDoc(docRef, safeData);
+  } catch (err) {
+    console.warn('Firestore patient update failed, falling back to local storage:', err);
+  }
+
+  // Update local storage
+  const currentList = getLocalPatients();
+  let updatedPatient: Patient | null = null;
+  const updatedList = currentList.map((p) => {
+    if (p.id === patientDocId || (p.patientId && updatedData.patientId && p.patientId === updatedData.patientId)) {
+      updatedPatient = { ...p, ...safeData };
+      return updatedPatient;
+    }
+    return p;
+  });
+
+  if (updatedList.length > 0) {
+    saveLocalPatients(updatedList);
+  }
+
+  if (updatedPatient) {
+    return updatedPatient;
+  }
+
+  return {
+    id: patientDocId,
+    patientId: updatedData.patientId || '',
+    name: updatedData.name || '',
+    dateOfBirth: updatedData.dateOfBirth || '',
+    phoneNumber: updatedData.phoneNumber || '',
+    address: updatedData.address || '',
+    registeredBy: 'system',
+    createdAt: now,
+    ...safeData,
+  } as Patient;
+}
+
+/**
+ * Delete a patient personal profile and related local records
+ */
+export async function deletePatient(patientDocId: string): Promise<void> {
+  // Delete from Firestore
+  try {
+    const docRef = doc(db, 'patients', patientDocId);
+    await deleteDoc(docRef);
+  } catch (err) {
+    console.warn('Firestore patient delete failed, falling back to local storage:', err);
+  }
+
+  // Remove from local patients cache
+  const currentList = getLocalPatients();
+  const filteredList = currentList.filter((p) => p.id !== patientDocId);
+  saveLocalPatients(filteredList);
+
+  // Clean up cached prescriptions & reports for this patient
+  try {
+    localStorage.removeItem(`${LOCAL_STORAGE_PRESCRIPTIONS_KEY}_${patientDocId}`);
+    localStorage.removeItem(`${LOCAL_STORAGE_REPORTS_KEY}_${patientDocId}`);
+  } catch {
+    // Ignore cleanup errors
+  }
+}
+
 // --- Prescriptions Management ---
 
 export function generatePrescriptionNumber(type: PrescriptionType = 'internal'): string {

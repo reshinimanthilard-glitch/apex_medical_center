@@ -23,6 +23,8 @@ import {
   createPrescription,
   updatePrescription,
   deletePrescription,
+  updatePatient,
+  deletePatient,
   seedSampleData, 
   getLocalPatients,
   fetchStoreMedicines,
@@ -262,6 +264,38 @@ export default function App() {
     handleSelectPatient(newPatient);
   };
 
+  // Update Patient Personal Profile
+  const handleUpdatePatient = async (patientDocId: string, updatedData: Partial<Patient>) => {
+    const updated = await updatePatient(patientDocId, updatedData);
+    setPatients((prev) =>
+      prev.map((p) => (p.id === patientDocId || (p.patientId && p.patientId === updated.patientId) ? { ...p, ...updated } : p))
+    );
+    if (selectedPatient && (selectedPatient.id === patientDocId || selectedPatient.patientId === updated.patientId)) {
+      setSelectedPatient((prev) => (prev ? { ...prev, ...updated } : null));
+    }
+  };
+
+  // Delete Patient Personal Profile
+  const handleDeletePatient = async (patientDocId: string) => {
+    await deletePatient(patientDocId);
+    setPatients((prev) => prev.filter((p) => p.id !== patientDocId));
+    if (selectedPatient && (selectedPatient.id === patientDocId || selectedPatient.patientId === patientDocId)) {
+      setSelectedPatient(null);
+      setCurrentTab('search');
+    }
+  };
+
+  // Update Staff / Doctor Personal Profile
+  const handleUpdateStaffProfile = (updatedStaff: StaffUser) => {
+    setStaffUser(updatedStaff);
+    sessionStorage.setItem('apex_staff_session', JSON.stringify(updatedStaff));
+  };
+
+  // Delete / Reset Staff Personal Profile
+  const handleDeleteStaffProfile = async () => {
+    await handleLogout();
+  };
+
   // Seed sample clinical data & Drug Store inventory
   const handleSeedData = async () => {
     setIsSeeding(true);
@@ -348,6 +382,8 @@ export default function App() {
         onOpenTestingGuide={() => setIsTestingGuideOpen(true)}
         onSeedSampleData={handleSeedData}
         isSeeding={isSeeding}
+        onUpdateStaffProfile={handleUpdateStaffProfile}
+        onDeleteStaffProfile={handleDeleteStaffProfile}
       />
 
       {/* Main Workspace Content */}
@@ -368,6 +404,8 @@ export default function App() {
             }}
             storeMedicinesCount={storeMedicines.length}
             onNavigateToDrugStore={() => setCurrentTab('drug-store')}
+            onUpdatePatient={handleUpdatePatient}
+            onDeletePatient={handleDeletePatient}
           />
         )}
 
@@ -400,6 +438,8 @@ export default function App() {
             isLoading={isLoadingPatientData}
             storeMedicines={storeMedicines}
             onRefreshStore={loadStoreData}
+            onUpdatePatientProfile={handleUpdatePatient}
+            onDeletePatient={handleDeletePatient}
           />
         )}
 

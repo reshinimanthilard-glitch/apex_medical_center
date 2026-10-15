@@ -16,10 +16,13 @@ import {
   Layers,
   Users,
   Bell,
-  ChevronDown
+  ChevronDown,
+  Edit3,
+  User
 } from 'lucide-react';
 import { StaffUser } from '../types/patient';
 import { usePWAInstall } from '../hooks/usePWAInstall';
+import { EditStaffProfileModal } from './EditStaffProfileModal';
 
 interface HeaderProps {
   currentTab: 'search' | 'register' | 'details' | 'drug-store';
@@ -30,6 +33,8 @@ interface HeaderProps {
   onOpenTestingGuide: () => void;
   onSeedSampleData: () => void;
   isSeeding: boolean;
+  onUpdateStaffProfile?: (updatedStaff: StaffUser) => void;
+  onDeleteStaffProfile?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -41,9 +46,12 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenTestingGuide,
   onSeedSampleData,
   isSeeding,
+  onUpdateStaffProfile,
+  onDeleteStaffProfile,
 }) => {
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
   const [showIOSModal, setShowIOSModal] = useState(false);
+  const [isStaffProfileModalOpen, setIsStaffProfileModalOpen] = useState(false);
 
   const isPatientManagementActive = currentTab === 'search' || currentTab === 'register' || currentTab === 'details';
   const isDrugStoreActive = currentTab === 'drug-store';
@@ -188,24 +196,38 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Doctor Profile Pill (Image 1 Style) */}
           {staffUser && (
             <div className="flex items-center gap-2.5 p-1.5 pr-2 rounded-2xl hover:bg-slate-50 border border-slate-200/80 transition-colors">
-              <img 
-                src="/src/assets/images/cute_doctor_avatar_1791878325900.jpg"
-                alt="Dr. Wishmika Rajaguru"
-                className="w-9 h-9 rounded-xl object-cover border border-teal-200 shadow-2xs"
-                referrerPolicy="no-referrer"
-              />
-              <div className="hidden sm:block text-left">
-                <p className="text-xs font-bold text-slate-900 leading-tight">
-                  {staffUser.displayName || 'Dr. Wishmika Rajaguru'}
-                </p>
-                <p className="text-[10px] text-teal-700 font-semibold">
-                  {staffUser.role} • Kurunegala
-                </p>
-              </div>
+              <button
+                onClick={() => setIsStaffProfileModalOpen(true)}
+                className="flex items-center gap-2.5 text-left cursor-pointer group"
+                title="View & Edit Personal Profile"
+              >
+                <img 
+                  src="/src/assets/images/cute_doctor_avatar_1791878325900.jpg"
+                  alt="Dr. Wishmika Rajaguru"
+                  className="w-9 h-9 rounded-xl object-cover border border-teal-200 shadow-2xs group-hover:border-teal-400 transition-colors"
+                  referrerPolicy="no-referrer"
+                />
+                <div className="hidden sm:block text-left">
+                  <p className="text-xs font-bold text-slate-900 group-hover:text-teal-700 leading-tight transition-colors">
+                    {staffUser.displayName || 'Dr. Wishmika Rajaguru'}
+                  </p>
+                  <p className="text-[10px] text-teal-700 font-semibold">
+                    {staffUser.role} • Kurunegala
+                  </p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => setIsStaffProfileModalOpen(true)}
+                className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-xl transition-colors cursor-pointer"
+                title="Edit Personal Profile"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+              </button>
 
               <button
                 onClick={onLogout}
-                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer ml-1"
+                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
                 title="Log Out Staff Member"
               >
                 <LogOut className="w-4 h-4" />
@@ -214,6 +236,27 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
       </div>
+
+      {/* Doctor / Staff Personal Profile Modal */}
+      {isStaffProfileModalOpen && staffUser && (
+        <EditStaffProfileModal
+          isOpen={isStaffProfileModalOpen}
+          onClose={() => setIsStaffProfileModalOpen(false)}
+          staffUser={staffUser}
+          onSaveProfile={(updatedStaff) => {
+            if (onUpdateStaffProfile) {
+              onUpdateStaffProfile(updatedStaff);
+            }
+          }}
+          onDeleteProfile={() => {
+            if (onDeleteStaffProfile) {
+              onDeleteStaffProfile();
+            } else {
+              onLogout();
+            }
+          }}
+        />
+      )}
 
       {/* iOS Installation Instructions Modal */}
       {showIOSModal && (
